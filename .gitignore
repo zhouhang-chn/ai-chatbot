@@ -6,7 +6,7 @@ node_modules
 .pnp.js
 .vscode/
 .cursor/
-
+.cursorrules
 # testing
 coverage
 
