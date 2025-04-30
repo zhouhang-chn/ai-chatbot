@@ -39,6 +39,9 @@ const PurePreviewMessage = ({
 }) => {
   const [mode, setMode] = useState<'view' | 'edit'>('view');
 
+  // Log the received message parts for debugging
+  console.log(`[PreviewMessage] Rendering message ${message.id} (Role: ${message.role}):`, message.parts);
+
   return (
     <AnimatePresence>
       <motion.div

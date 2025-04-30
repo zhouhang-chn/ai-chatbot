@@ -43,6 +43,20 @@
       "when": 1741934630596,
       "tag": "0005_wooden_whistler",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1745912685356,
+      "tag": "0006_woozy_randall_flagg",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1745916402903,
+      "tag": "0007_legal_molten_man",
+      "breakpoints": true
     }
   ]
 }

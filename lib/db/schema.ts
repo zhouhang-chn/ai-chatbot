@@ -26,6 +26,7 @@ export const chat = pgTable('Chat', {
   userId: uuid('userId')
     .notNull()
     .references(() => user.id),
+  selectedChatModel: text('selected_chat_model'),
   visibility: varchar('visibility', { enum: ['public', 'private'] })
     .notNull()
     .default('private'),
@@ -115,6 +116,8 @@ export const document = pgTable(
     userId: uuid('userId')
       .notNull()
       .references(() => user.id),
+    chatId: uuid('chatId')
+      .references(() => chat.id),
   },
   (table) => {
     return {

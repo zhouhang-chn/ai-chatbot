@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { availableModelIds } from '@/lib/ai/models';
 
 const textPartSchema = z.object({
   text: z.string().min(1).max(2000),
@@ -23,14 +24,7 @@ export const postRequestBodySchema = z.object({
       )
       .optional(),
   }),
-  selectedChatModel: z.enum([
-    'grok-2-vision',
-    'grok-3-mini-reasoning',
-    'openai-gpt-4o',
-    'openai-gpt-4o-reasoning',
-    'google-gemini-1.5-pro',
-    'google-gemini-1.5-pro-reasoning',
-  ]),
+  selectedChatModel: z.enum(availableModelIds),
 });
 
 export type PostRequestBody = z.infer<typeof postRequestBodySchema>;

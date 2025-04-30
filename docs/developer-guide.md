@@ -124,6 +124,11 @@ Here's the typical workflow for making schema changes:
     ```bash
     pnpm dev
     ```
+    or to show datetime 
+    ```
+    pnpm dev | ts  '[%Y-%m-%d %H:%M:%S]'
+    ```
+
     The application will typically be available at `http://localhost:3000`.
 
 *   **Linting and Formatting**:

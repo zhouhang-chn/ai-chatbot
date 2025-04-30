@@ -4,6 +4,8 @@
 node_modules
 .pnp
 .pnp.js
+.vscode/
+.cursor/
 
 # testing
 coverage
@@ -41,3 +43,11 @@ yarn-error.log*
 /playwright-report/
 /blob-report/
 /playwright/*
+
+# Python AI Relay Service Specific
+/ai-relay-service/venv/
+/ai-relay-service/**/__pycache__/
+/ai-relay-service/**/*.pyc
+/ai-relay-service/.env
+/ai-relay-service/.pytest_cache/
+/ai-relay-service/.mypy_cache/

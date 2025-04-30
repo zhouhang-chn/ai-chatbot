@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  # PostgreSQL database
+  postgres:
+    image: postgres:15
+    container_name: ai-chatbot-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ai_chatbot
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - ai-chatbot-network
+
+  # PgAdmin (optional - for database management)
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: ai-chatbot-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - ai-chatbot-network
+    restart: unless-stopped
+
+  # Next.js app
+  nextjs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai-chatbot-nextjs
+    env_file:
+      - .env.local
+    environment:
+      - POSTGRES_URL=postgresql://postgres:postgres@postgres:5432/ai_chatbot
+      - NODE_ENV=development
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - ai-chatbot-network
+    restart: unless-stopped
+    command: pnpm dev
+
+  # AI relay service (if needed)
+  ai-relay:
+    build:
+      context: ./ai-relay-service
+      dockerfile: Dockerfile
+    container_name: ai-chatbot-relay
+    env_file:
+      - ./ai-relay-service/.env
+    environment:
+      - FRONTEND_ORIGIN=http://localhost:3000
+    ports:
+      - "8000:8000"
+    networks:
+      - ai-chatbot-network
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+    name: ai-chatbot-postgres-data
+
+networks:
+  ai-chatbot-network:
+    name: ai-chatbot-network 

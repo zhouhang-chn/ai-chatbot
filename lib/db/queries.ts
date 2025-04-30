@@ -78,10 +78,12 @@ export async function saveChat({
   id,
   userId,
   title,
+  selectedChatModel,
 }: {
   id: string;
   userId: string;
   title: string;
+  selectedChatModel: string;
 }) {
   try {
     return await db.insert(chat).values({
@@ -89,6 +91,7 @@ export async function saveChat({
       createdAt: new Date(),
       userId,
       title,
+      selectedChatModel,
     });
   } catch (error) {
     console.error('Failed to save chat in database');
@@ -263,12 +266,14 @@ export async function saveDocument({
   kind,
   content,
   userId,
+  chatId,
 }: {
   id: string;
   title: string;
   kind: ArtifactKind;
   content: string;
   userId: string;
+  chatId: string;
 }) {
   try {
     return await db
@@ -280,6 +285,7 @@ export async function saveDocument({
         content,
         userId,
         createdAt: new Date(),
+        chatId,
       })
       .returning();
   } catch (error) {

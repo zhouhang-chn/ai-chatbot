@@ -1,14 +1,16 @@
-import { myProvider } from '@/lib/ai/providers';
 import { createDocumentHandler } from '@/lib/artifacts/server';
 import { experimental_generateImage } from 'ai';
+import { Session } from 'next-auth';
+import { AiRelayProvider } from '@/lib/ai/providers/ai-relay-provider';
+import { ChatModel } from '@/lib/ai/models';
 
 export const imageDocumentHandler = createDocumentHandler<'image'>({
   kind: 'image',
-  onCreateDocument: async ({ title, dataStream }) => {
+  onCreateDocument: async ({ title, dataStream, session, relayProvider, provider, baseModelId }) => {
     let draftContent = '';
 
     const { image } = await experimental_generateImage({
-      model: myProvider.imageModel('small-model'),
+      model: relayProvider.imageGeneration(baseModelId, provider),
       prompt: title,
       n: 1,
     });
@@ -22,11 +24,11 @@ export const imageDocumentHandler = createDocumentHandler<'image'>({
 
     return draftContent;
   },
-  onUpdateDocument: async ({ description, dataStream }) => {
+  onUpdateDocument: async ({ document, description, dataStream, session, relayProvider, provider, baseModelId }) => {
     let draftContent = '';
 
     const { image } = await experimental_generateImage({
-      model: myProvider.imageModel('small-model'),
+      model: relayProvider.imageGeneration(baseModelId, provider),
       prompt: description,
       n: 1,
     });

@@ -79,7 +79,7 @@ export const codeArtifact = new Artifact<'code', Metadata>({
     if (streamPart.type === 'code-delta') {
       setArtifact((draftArtifact) => ({
         ...draftArtifact,
-        content: streamPart.content as string,
+        content: (draftArtifact.content || '') + (streamPart.content as string),
         isVisible:
           draftArtifact.status === 'streaming' &&
           draftArtifact.content.length > 300 &&
@@ -88,6 +88,21 @@ export const codeArtifact = new Artifact<'code', Metadata>({
             : draftArtifact.isVisible,
         status: 'streaming',
       }));
+    } else if (streamPart.type === 'text-delta') {
+      setArtifact((draftArtifact) => {
+        const newKind = draftArtifact.kind === 'code' ? 'text' : draftArtifact.kind;
+        const newContent = 
+          draftArtifact.kind === 'code' 
+          ? (streamPart.content as string)
+          : (draftArtifact.content || '') + (streamPart.content as string);
+          
+        return {
+          ...draftArtifact,
+          kind: newKind, 
+          content: newContent,
+          status: 'streaming',
+        }
+      });
     }
   },
   content: ({ metadata, setMetadata, ...props }) => {

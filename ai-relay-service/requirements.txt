@@ -1,0 +1,18 @@
+# Core FastAPI
+fastapi
+uvicorn[standard]
+
+# Environment Variables
+python-dotenv
+
+# AI SDKs
+openai>=1.0
+# Add xai SDK if/when available
+
+# HTTP Client & Proxy Support
+httpx[http2]
+pysocks # Recommended if using SOCKS_PROXY env var with httpx
+
+# Optional: Specific SSE streaming support (if needed later)
+# sse-starlette
+# orjson

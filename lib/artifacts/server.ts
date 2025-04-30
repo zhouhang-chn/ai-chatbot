@@ -7,6 +7,8 @@ import { DataStreamWriter } from 'ai';
 import { Document } from '../db/schema';
 import { saveDocument } from '../db/queries';
 import { Session } from 'next-auth';
+import { AiRelayProvider } from '@/lib/ai/providers/ai-relay-provider';
+import { ChatModel } from '@/lib/ai/models';
 
 export interface SaveDocumentProps {
   id: string;
@@ -21,6 +23,10 @@ export interface CreateDocumentCallbackProps {
   title: string;
   dataStream: DataStreamWriter;
   session: Session;
+  relayProvider: AiRelayProvider;
+  provider: ChatModel['provider'];
+  baseModelId: string;
+  chatId: string;
 }
 
 export interface UpdateDocumentCallbackProps {
@@ -28,6 +34,10 @@ export interface UpdateDocumentCallbackProps {
   description: string;
   dataStream: DataStreamWriter;
   session: Session;
+  relayProvider: AiRelayProvider;
+  provider: ChatModel['provider'];
+  baseModelId: string;
+  chatId: string;
 }
 
 export interface DocumentHandler<T = ArtifactKind> {
@@ -44,12 +54,7 @@ export function createDocumentHandler<T extends ArtifactKind>(config: {
   return {
     kind: config.kind,
     onCreateDocument: async (args: CreateDocumentCallbackProps) => {
-      const draftContent = await config.onCreateDocument({
-        id: args.id,
-        title: args.title,
-        dataStream: args.dataStream,
-        session: args.session,
-      });
+      const draftContent = await config.onCreateDocument(args);
 
       if (args.session?.user?.id) {
         await saveDocument({
@@ -58,18 +63,14 @@ export function createDocumentHandler<T extends ArtifactKind>(config: {
           content: draftContent,
           kind: config.kind,
           userId: args.session.user.id,
+          chatId: args.chatId,
         });
       }
 
       return;
     },
     onUpdateDocument: async (args: UpdateDocumentCallbackProps) => {
-      const draftContent = await config.onUpdateDocument({
-        document: args.document,
-        description: args.description,
-        dataStream: args.dataStream,
-        session: args.session,
-      });
+      const draftContent = await config.onUpdateDocument(args);
 
       if (args.session?.user?.id) {
         await saveDocument({
@@ -78,6 +79,7 @@ export function createDocumentHandler<T extends ArtifactKind>(config: {
           content: draftContent,
           kind: config.kind,
           userId: args.session.user.id,
+          chatId: args.chatId,
         });
       }
 

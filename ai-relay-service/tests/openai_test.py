@@ -5,7 +5,7 @@ from openai import OpenAI, APITimeoutError, APIConnectionError
 from dotenv import load_dotenv
 
 # Load environment variables from .env.local file
-dotenv_path = os.path.join(os.path.dirname(__file__), '../../.env.local')
+dotenv_path = os.path.join(os.path.dirname(__file__), '../.env')
 load_dotenv(dotenv_path=dotenv_path)
 
 def run_test():
