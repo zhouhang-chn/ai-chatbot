@@ -140,93 +140,129 @@ export class AiRelayLanguageModel implements LanguageModel {
       }
 
       // Return object conforming to Awaited<ReturnType<LanguageModel['doGenerate']>>
+      console.log('[AiRelayLanguageModel] doGenerate result:', {
+        text: text || undefined,
+        toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+        finishReason
+      });
       return {
         text: text || undefined,
         toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
         finishReason,
         usage: finalUsage ?? usage,
-        rawResponse, 
         rawCall, 
       };
   }
 
   // --- Helper: Prepare Payload for Relay Service ---
   private prepareRelayPayload(options: LanguageModelCallOptions): any {
-    
-    // --- Standard OpenAI API Message Formatting --- 
+
+    // --- Standard OpenAI API Message Formatting v2 --- 
     const processedMessagesForApi: Array<any> = [];
-    // Process prompt from options, assuming V1Message format
+    // Process prompt from options, assuming V1Message format from SDK
     for (const msg of options.prompt as V1Message[]) {
-      if (msg.role === 'assistant' && Array.isArray(msg.content)) {
-        // Assistant message with potential tool calls/results in content parts
-        let assistantTextContent = '';
-        const toolCallsForApi: any[] = [];
-        const toolResultsData: Array<{toolCallId: string, toolName: string, result: any}> = [];
+      switch (msg.role) {
+        case 'system':
+          processedMessagesForApi.push({ role: 'system', content: msg.content });
+          break;
 
-        for (const part of msg.content) {
-          if (part.type === 'text') {
-            assistantTextContent += (assistantTextContent ? '\n' : '') + part.text;
-          } else if (part.type === 'tool-call') {
-            // Extract tool call info for the assistant's tool_calls array
-            toolCallsForApi.push({
-              id: part.toolCallId,
-              type: 'function', // Assuming function tools
-              function: {
-                name: part.toolName,
-                arguments: JSON.stringify(part.args), // Ensure args are stringified
-              },
-            });
-          } else if (part.type === 'tool-result') {
-            // Store tool result data to create separate 'tool' role messages later
-             toolResultsData.push({
-               toolCallId: part.toolCallId,
-               toolName: part.toolName,
-               result: part.result,
-             });
+        case 'user':
+          // Simplify content if it's a single text part array, else keep original
+          let userContent: string | Array<any>;
+          if (Array.isArray(msg.content) && msg.content.length === 1 && msg.content[0].type === 'text') {
+             userContent = msg.content[0].text;
+          } else {
+             userContent = msg.content;
           }
-          // Ignore other part types for API message structure?
-        }
+          processedMessagesForApi.push({ role: 'user', content: userContent });
+          break;
 
-        // Add the assistant message with its text and tool_calls array
-        processedMessagesForApi.push({
-          role: 'assistant',
-          content: assistantTextContent || "", 
-          tool_calls: toolCallsForApi.length > 0 ? toolCallsForApi : undefined,
-        });
+        case 'assistant':
+          let assistantTextContent = '';
+          const toolCallsForApi: any[] = [];
 
-        // Add separate 'tool' role messages for each result
-        for (const resultData of toolResultsData) {
+          // Extract text and tool calls ONLY from content parts if it's an array
+          if (Array.isArray(msg.content)) {
+            for (const part of msg.content) {
+              if (part.type === 'text') {
+                 assistantTextContent += (assistantTextContent ? '\n' : '') + part.text;
+              } else if (part.type === 'tool-call') {
+                 toolCallsForApi.push({
+                   id: part.toolCallId,
+                   type: 'function',
+                   function: {
+                     name: part.toolName,
+                     arguments: JSON.stringify(part.args), // Args should be stringified JSON
+                   },
+                 });
+              }
+              // Ignore other part types like tool-result here
+            }
+          } else if (typeof msg.content === 'string') {
+             // Handle case where content is just a string (no tool calls expected here in V1)
+             assistantTextContent = msg.content;
+          }
+          
           processedMessagesForApi.push({
-            role: 'tool',
-            tool_call_id: resultData.toolCallId,
-            name: resultData.toolName,
-            content: JSON.stringify(resultData.result ?? ''),
+            role: 'assistant',
+            content: assistantTextContent || " ", // Use space if no text
+            tool_calls: toolCallsForApi.length > 0 ? toolCallsForApi : undefined,
           });
-        }
+          break;
 
-      } else if (msg.role === 'user' || msg.role === 'system') {
-         // Keep user and system messages (assuming content is string)
-         processedMessagesForApi.push({ role: msg.role, content: msg.content });
-      } else if (msg.role === 'tool') {
-         // This case might happen if the SDK already processed results
-         // Ensure it matches the required format
-          processedMessagesForApi.push({
-             role: 'tool',
-             tool_call_id: (msg.content as any)?.[0]?.toolCallId, // Adjust based on actual structure if needed
-             name: (msg.content as any)?.[0]?.toolName,      // Adjust based on actual structure if needed
-             content: JSON.stringify((msg.content as any)?.[0]?.result ?? '') // Adjust based on actual structure if needed
-           });
-      } else {
-         // Filter out other roles or handle as needed
-         console.warn("[AiRelayLanguageModel] Filtering out unexpected message role:", msg.role);
+        case 'tool':
+           // Primarily expect result data within content parts array in V1
+           let toolResultContent = '[]'; // Default to empty JSON array string
+           let toolCallId = '';
+           let toolName = ''; 
+
+           if (Array.isArray(msg.content)) {
+               // Find the first tool-result part
+               const resultPart = msg.content.find(part => part.type === 'tool-result');
+               if (resultPart && resultPart.type === 'tool-result') { // Check type again for TS narrowing
+                   toolResultContent = JSON.stringify(resultPart.result ?? '');
+                   toolCallId = resultPart.toolCallId;
+                   toolName = resultPart.toolName;
+               } else {
+                  console.warn("[AiRelayLanguageModel] Tool message content is array but no 'tool-result' part found.");
+               }
+           } else if (typeof msg.content === 'string') {
+                // If content is string, assume it IS the stringified result
+                // Need tool_call_id and name from elsewhere (less standard)
+                toolResultContent = msg.content;
+                toolCallId = (msg as any).tool_call_id || (msg as any).toolCallId || ''; 
+                toolName = (msg as any).tool_name || (msg as any).name || ''; 
+                if (!toolCallId) {
+                   console.error("[AiRelayLanguageModel] Tool message content is string, but cannot find toolCallId!");
+                }
+           } else {
+                console.error("[AiRelayLanguageModel] Unexpected content type for tool message:", typeof msg.content);
+           }
+           
+           if (toolCallId) { // Only add if we have an ID
+                processedMessagesForApi.push({
+                    role: 'tool',
+                    tool_call_id: toolCallId,
+                    name: toolName, // Name might be empty if derived from string content
+                    content: toolResultContent
+                });
+           } else {
+               console.error("[AiRelayLanguageModel] Could not determine toolCallId for tool message:", JSON.stringify(msg));
+           }
+          break;
+
+        default:
+          console.warn("[AiRelayLanguageModel] Filtering out unexpected message role:", msg.role);
+          break;
       }
     }
-    // --- End Standard OpenAI API Message Formatting ---
+    // --- End Standard OpenAI API Message Formatting v2 ---
 
-    // Extract system prompt separately (if needed, or handle above)
-    const system_prompt = options.prompt.find((part: V1Message) => part.role === 'system')?.content as string | undefined;
-    // Filter out system prompt from processed messages if handled separately
-    const messagesForPayload = processedMessagesForApi.filter(m => m.role !== 'system');
+    // Extract system prompt separately 
+    const system_prompt_msg = processedMessagesForApi.find((m: any) => m.role === 'system');
+    const system_prompt = system_prompt_msg?.content as string | undefined;
+    // Filter out system prompt from processed messages if handled separately by API
+    const messagesForPayload = processedMessagesForApi.filter((m: any) => m.role !== 'system');
 
     let relayTools: any[] | undefined = undefined;
     let tool_choice: any | undefined = undefined;
@@ -286,7 +322,7 @@ export class AiRelayLanguageModel implements LanguageModel {
         tools: relayTools,
         tool_choice: tool_choice,
         // Include system prompt if it exists and messagesForPayload doesn't contain it
-        ...(system_prompt && !messagesForPayload.some(m => m.role === 'system') && { system_prompt: system_prompt }),
+        ...(system_prompt && !messagesForPayload.some((m: any) => m.role === 'system') && { system_prompt: system_prompt }),
         temperature: options.temperature,
         max_tokens: options.maxTokens,
         top_p: options.topP,
@@ -384,7 +420,7 @@ export class AiRelayLanguageModel implements LanguageModel {
                    parsedArgs = {};
                  }
                  // Log before enqueueing
-                 console.log('[AiRelayLanguageModel] Enqueuing tool-call. Type of args:', typeof jsonData.function_call.arguments, 'Value:', jsonData.function_call.arguments);
+                 console.log('[AiRelayLanguageModel] Enqueuing tool-call.', "Name:", jsonData.function_call.name, "Type of args:", typeof jsonData.function_call.arguments, "Value:", jsonData.function_call.arguments);
                  controller.enqueue({
                    type: 'tool-call',
                    toolCallType: 'function',

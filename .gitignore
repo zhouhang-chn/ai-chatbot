@@ -51,3 +51,4 @@ yarn-error.log*
 /ai-relay-service/.env
 /ai-relay-service/.pytest_cache/
 /ai-relay-service/.mypy_cache/
+*.pyc

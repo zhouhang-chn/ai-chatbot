@@ -72,6 +72,7 @@ export async function POST(request: Request) {
     title,
     kind,
     userId: session.user.id,
+    chatId: id,
   });
 
   return Response.json(document, { status: 200 });
