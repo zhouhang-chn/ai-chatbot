@@ -35,7 +35,8 @@ export async function POST(request: Request) {
   try {
     const json = await request.json();
     requestBody = postRequestBodySchema.parse(json);
-  } catch (_) {
+  } catch (error) {
+    console.error("Error parsing request body in /api/chat:", error);
     return new Response('Invalid request body', { status: 400 });
   }
 
@@ -69,6 +70,7 @@ export async function POST(request: Request) {
     if (!chat) {
       const title = await generateTitleFromUserMessage({
         message,
+        selectedChatModel,
       });
 
       await saveChat({ id, userId: session.user.id, title });
@@ -116,7 +118,7 @@ export async function POST(request: Request) {
           messages,
           maxSteps: 5,
           experimental_activeTools:
-            selectedChatModel === 'chat-model-reasoning'
+            selectedChatModel.includes('reasoning')
               ? []
               : [
                   'getWeather',
@@ -187,7 +189,8 @@ export async function POST(request: Request) {
         return 'Oops, an error occurred!';
       },
     });
-  } catch (_) {
+  } catch (error) {
+    console.error("Error processing /api/chat request:", error);
     return new Response('An error occurred while processing your request!', {
       status: 500,
     });

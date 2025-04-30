@@ -12,7 +12,12 @@ export const entitlementsByUserType: Record<UserType, Entitlements> = {
    */
   guest: {
     maxMessagesPerDay: 20,
-    availableChatModelIds: ['chat-model', 'chat-model-reasoning'],
+    // TODO: Decide which models guests should access.
+    // Using Grok Mini reasoning as an example if XAI_API_KEY is set.
+    availableChatModelIds: [
+      'openai-gpt-4o',
+      'openai-gpt-4o-reasoning'
+    ]
   },
 
   /*
@@ -20,7 +25,15 @@ export const entitlementsByUserType: Record<UserType, Entitlements> = {
    */
   regular: {
     maxMessagesPerDay: 100,
-    availableChatModelIds: ['chat-model', 'chat-model-reasoning'],
+    // Allow regular users access to all configured models
+    availableChatModelIds: [
+      'grok-2-vision',
+      'grok-3-mini-reasoning',
+      'openai-gpt-4o',
+      'openai-gpt-4o-reasoning',
+      'google-gemini-1.5-pro',
+      'google-gemini-1.5-pro-reasoning',
+    ],
   },
 
   /*
