@@ -1,0 +1,65 @@
+# Project Code Structure
+
+This document outlines the high-level structure of the `ai-chatbot` project codebase.
+
+## Top-Level Directories
+
+-   **`.git/`**: Git version control system directory.
+-   **`.next/`**: Build output from Next.js.
+-   **`node_modules/`**: Project dependencies managed by pnpm.
+-   **`ai-relay-service/`**: Backend Python service acting as a relay/proxy to underlying AI models.
+    -   `app/`: Core Flask application code for the relay service.
+        -   `services.py`: Handles requests and interacts with AI models.
+        -   `routes.py`: Defines API endpoints.
+    -   `tests/`: Unit/integration tests for the relay service.
+    -   `requirements.txt`: Python dependencies.
+    -   `Dockerfile`: Containerization configuration.
+-   **`components/`**: Reusable React components for the frontend UI.
+    -   `ui/`: Base UI components (likely from shadcn/ui).
+    -   `chat.tsx`: Core chat interface component.
+    -   `message.tsx`: Component for rendering individual messages.
+    -   `artifact.tsx`: Component for rendering artifacts (code, text, etc.).
+    -   `*.tsx`: Various other specific UI components (e.g., `model-selector.tsx`, `toolbar.tsx`, `sidebar-history.tsx`).
+-   **`docs/`**: Project documentation (including this file).
+-   **`debug/`**: Scripts and files used for debugging purposes.
+    -   `gemini_test.py`: Standalone script for testing Gemini API calls.
+-   **`app/`**: Next.js application directory (App Router).
+    -   `(auth)/`: Routes related to authentication.
+        -   `api/auth/[...nextauth]/`: NextAuth.js API route handler.
+        -   `signin/`: Sign-in page UI.
+    -   `(chat)/`: Routes related to the main chat interface.
+        -   `api/chat/`: API route for handling chat requests (`route.ts`).
+        -   `api/document/`: API route for document operations (`route.ts`).
+        -   `chat/[id]/`: Dynamic route for individual chat sessions (`page.tsx`).
+        -   `page.tsx`: Default page for the chat section.
+        -   `layout.tsx`: Layout component for the chat section.
+    -   `layout.tsx`: Root layout for the entire application.
+    -   `globals.css`: Global CSS styles.
+-   **`tests/`**: End-to-end tests (likely Playwright).
+-   **`public/`**: Static assets served directly (e.g., images, fonts).
+-   **`playwright/`**: Helper files or custom configurations for Playwright tests.
+-   **`lib/`**: Core libraries, utilities, and business logic.
+    -   `ai/`: Logic related to AI interactions.
+        -   `providers/`: Abstractions for different AI model providers (e.g., `ai-relay-language-model.ts`).
+        -   `tools/`: Definitions and implementations of tools the AI can use (e.g., `create-document.ts`, `update-document.ts`).
+        -   `prompts.ts`: System and other prompts used for AI generation.
+        -   `models.ts`: Definitions and configurations for supported AI models.
+        -   `entitlements.ts`: Defines usage limits based on user types.
+    -   `db/`: Database interaction logic (using Drizzle ORM).
+        -   `queries.ts`: Functions for querying the database (e.g., `getMessagesByChatId`, `saveMessages`).
+        -   `schema.ts`: Database table schema definitions.
+        -   `migrations/`: Database migration files.
+        -   `migrate.ts`: Script for running migrations.
+    -   `artifacts/`: Server-side logic related to artifact handling.
+        -   `server.ts`: Core handler creation logic (`createDocumentHandler`).
+    -   `editor/`: Likely related to text/code editor components or logic.
+    -   `utils.ts`: General utility functions.
+    -   `constants.ts`: Application-wide constants.
+-   **`hooks/`**: Custom React hooks.
+-   **`artifacts/`**: Server-side implementations for specific artifact types (code, text, image, sheet). Each subdirectory likely contains a `server.ts` implementing the handler interface defined in `lib/artifacts/server.ts`.
+    -   `code/server.ts`: Implementation for creating/updating code artifacts.
+    -   `image/server.ts`: Implementation for image artifacts.
+    -   `sheet/server.ts`: Implementation for sheet artifacts.
+    -   `text/server.ts`: Implementation for text artifacts.
+-   **`middleware.ts`**: Next.js middleware for handling requests before they reach pages/routes (likely for authentication).
+-   **Config Files**: `next.config.ts`, `tsconfig.json`, `tailwind.config.ts`, `postcss.config.mjs`, `drizzle.config.ts`, `biome.jsonc`, `package.json`, etc. 
