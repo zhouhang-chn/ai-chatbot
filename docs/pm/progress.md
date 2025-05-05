@@ -16,6 +16,9 @@
 *   **[Design 1.1: Reduce Frontend Complexity](./designs/1.1.Reduce-Frontend-Complexity.md)**
     *   **Status:** Draft Complete
     *   **Notes:** Outlines refactoring and documentation efforts for the frontend. Task T1.1.1 (JSDocs) is complete.
+*   **[Design 2.1: Stabilize E2E Test Suite](./designs/2.1.Stabilize-E2E-Test-Suite.md)**
+    *   **Status:** Draft
+    *   **Notes:** Created to address issues documented in Idea 2.
 *   **Design 1.2: Remove AI SDK Dependency**
     *   **Status:** Considered (File Deleted)
     *   **Notes:** Design document was created to evaluate removing the Vercel AI SDK but subsequently removed from the `docs/PM/designs` directory. Focus shifted to Design 1.1.
@@ -37,3 +40,8 @@
 | T1.1.1.6   | Add JSDoc to `components/multimodal-input.tsx`| **Done**                             |
 | T1.1.1.7   | Review/Add JSDoc to Key Custom Hooks        | **Done**                             |
 | T1.1.1.8   | Review/Add JSDoc to Complex/Custom Types    | **Done**                             |
+
+### [Task T2.1.1: Fix E2E Test Suite Failures](./tasks/T2.1.1-Fix-E2E-Failures.md)
+
+*   **Status:** To Do
+*   **Notes:** Task created to address failures detailed in Design 2.1.

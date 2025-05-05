@@ -73,6 +73,9 @@ export function PureMessageActions({
               onClick={async () => {
                 const upvote = fetch('/api/vote', {
                   method: 'PATCH',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
                   body: JSON.stringify({
                     chatId,
                     messageId: message.id,
@@ -126,6 +129,9 @@ export function PureMessageActions({
               onClick={async () => {
                 const downvote = fetch('/api/vote', {
                   method: 'PATCH',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
                   body: JSON.stringify({
                     chatId,
                     messageId: message.id,

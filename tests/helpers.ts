@@ -53,12 +53,13 @@ export async function createAuthenticatedContext({
 
   const chatPage = new ChatPage(page);
   await chatPage.createNewChat();
-  await chatPage.chooseModelFromSelector('chat-model-reasoning');
-  await expect(chatPage.getSelectedModel()).resolves.toEqual('Reasoning model');
+  await chatPage.chooseModelFromSelector('google-gemini-2.5-pro-preview-03-25');
+  await expect(chatPage.getSelectedModel()).resolves.toEqual('Google Gemini 2.5 Pro (Preview)');
 
   await page.waitForTimeout(1000);
   await context.storageState({ path: storageFile });
   await page.close();
+  await context.close();
 
   const newContext = await browser.newContext({ storageState: storageFile });
   const newPage = await newContext.newPage();

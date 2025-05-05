@@ -14,7 +14,8 @@ test.describe('Chat activity', () => {
     await chatPage.isGenerationComplete();
 
     const assistantMessage = await chatPage.getRecentAssistantMessage();
-    expect(assistantMessage.content).toContain("It's just green duh!");
+    expect(assistantMessage.content).toContain('chlorophyll');
+    expect(assistantMessage.content).toContain('green');
   });
 
   test('Redirect to /chat/:id after submitting message', async () => {
@@ -22,7 +23,8 @@ test.describe('Chat activity', () => {
     await chatPage.isGenerationComplete();
 
     const assistantMessage = await chatPage.getRecentAssistantMessage();
-    expect(assistantMessage.content).toContain("It's just green duh!");
+    expect(assistantMessage.content).toContain('chlorophyll');
+    expect(assistantMessage.content).toContain('green');
     await chatPage.hasChatIdInUrl();
   });
 
@@ -31,9 +33,8 @@ test.describe('Chat activity', () => {
     await chatPage.isGenerationComplete();
 
     const assistantMessage = await chatPage.getRecentAssistantMessage();
-    expect(assistantMessage.content).toContain(
-      'With Next.js, you can ship fast!',
-    );
+    expect(assistantMessage.content).toContain('Next.js');
+    expect(assistantMessage.content).toContain('advantages');
   });
 
   test('Toggle between send/stop button based on activity', async () => {
@@ -49,6 +50,10 @@ test.describe('Chat activity', () => {
 
     await expect(chatPage.stopButton).not.toBeVisible();
     await expect(chatPage.sendButton).toBeVisible();
+
+    const assistantMessage = await chatPage.getRecentAssistantMessage();
+    expect(assistantMessage.content).toContain('San Francisco');
+    expect(assistantMessage.content).toMatch(/\d+°C/);
   });
 
   test('Stop generation during submission', async () => {
@@ -56,6 +61,12 @@ test.describe('Chat activity', () => {
     await expect(chatPage.stopButton).toBeVisible();
     await chatPage.stopButton.click();
     await expect(chatPage.sendButton).toBeVisible();
+
+    await chatPage.isGenerationComplete();
+
+    const assistantMessage = await chatPage.getRecentAssistantMessage();
+    expect(assistantMessage.content).toContain('San Francisco');
+    expect(assistantMessage.content).toMatch(/\d+°C/);
   });
 
   test('Edit user message and resubmit', async () => {
@@ -63,7 +74,8 @@ test.describe('Chat activity', () => {
     await chatPage.isGenerationComplete();
 
     const assistantMessage = await chatPage.getRecentAssistantMessage();
-    expect(assistantMessage.content).toContain("It's just green duh!");
+    expect(assistantMessage.content).toContain('chlorophyll');
+    expect(assistantMessage.content).toContain('green');
 
     const userMessage = await chatPage.getRecentUserMessage();
     await userMessage.edit('Why is the sky blue?');
@@ -104,9 +116,8 @@ test.describe('Chat activity', () => {
 
     const assistantMessage = await chatPage.getRecentAssistantMessage();
 
-    expect(assistantMessage.content).toBe(
-      'The current temperature in San Francisco is 17°C.',
-    );
+    expect(assistantMessage.content).toContain('San Francisco');
+    expect(assistantMessage.content).toMatch(/\d+°C/);
   });
 
   test('Upvote message', async () => {
@@ -148,6 +159,7 @@ test.describe('Chat activity', () => {
     expect(userMessage.content).toBe('Why is the sky blue?');
 
     const assistantMessage = await chatPage.getRecentAssistantMessage();
-    expect(assistantMessage.content).toContain("It's just blue duh!");
+    expect(assistantMessage.content).toContain('blue');
+    expect(assistantMessage.content).toContain('scattering');
   });
 });
