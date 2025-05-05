@@ -20,6 +20,56 @@ import { DocumentPreview } from './document-preview';
 import { MessageReasoning } from './message-reasoning';
 import type { UseChatHelpers } from '@ai-sdk/react';
 
+/**
+ * @interface PurePreviewMessageProps
+ * @description Defines the props for the `PurePreviewMessage` component, passed down from `Messages`.
+ */
+interface PurePreviewMessageProps {
+  /** ID of the current chat session. Passed down to child components like `MessageActions`. */
+  chatId: string;
+  /** The specific message object (`UIMessage`) to render, containing role, ID, and an array of `parts`. */
+  message: UIMessage;
+  /** The vote status (`Vote` object or undefined) for this specific message. Passed to `MessageActions`. */
+  vote: Vote | undefined;
+  /** Boolean indicating if this message is the last one in the list and currently being streamed (`status === 'streaming'`). Passed down to children like `MessageReasoning` and `MessageActions`. */
+  isLoading: boolean;
+  /** Function from `useChat` to update the messages array. Primarily used by `MessageEditor` to save edits. */
+  setMessages: UseChatHelpers['setMessages'];
+  /** Function from `useChat` to reload the last AI response. Primarily used by `MessageEditor`. */
+  reload: UseChatHelpers['reload'];
+  /** Boolean indicating if the chat is in read-only mode. Disables editing and actions. */
+  isReadonly: boolean;
+}
+
+/**
+ * @component PurePreviewMessage
+ * @description Renders a single message bubble within the chat log. It handles different message roles (user/assistant)
+ * for styling/layout, displays various message parts (text, attachments, tool calls/results, reasoning steps)
+ * by mapping over the `message.parts` array, and manages view/edit modes for user text messages.
+ * This is the core component responsible for the visual representation of a message and its contents.
+ * It's memoized by the exported `PreviewMessage` component for performance optimization.
+ *
+ * **Upstream:** Rendered within a loop by `Messages` component (`components/messages.tsx`). Receives a single `message` object and related state/handlers as props.
+ *
+ * **Downstream:**
+ * - **Renders:**
+ *   - `PreviewAttachment` (if `message.experimental_attachments` exist).
+ *   - Iterates through `message.parts`:
+ *     - `MessageReasoning` (for 'reasoning' parts).
+ *     - `Markdown` (for 'text' parts in view mode).
+ *     - `MessageEditor` (for 'text' parts in edit mode).
+ *     - Tool-Specific Components (`Weather`, `DocumentPreview`, `DocumentToolCall`, `DocumentToolResult`) for 'tool-invocation' parts based on `toolName` and `state` ('call' or 'result').
+ *   - `MessageActions` (if not `isReadonly`): Displays voting/copy actions.
+ * - **Uses Hooks:**
+ *   - `useState`: Manages the local `mode` ('view' or 'edit') for user text messages.
+ * - **Uses Libraries:**
+ *   - `framer-motion`: For entry animation.
+ *   - `classnames`/`cn`: For conditional styling.
+ *   - `@/components/ui/*`: For UI elements like `Button`, `Tooltip`.
+ *
+ * @param {PurePreviewMessageProps} props - The props for the component.
+ * @returns {JSX.Element | null} The rendered message element or null.
+ */
 const PurePreviewMessage = ({
   chatId,
   message,
@@ -28,15 +78,8 @@ const PurePreviewMessage = ({
   setMessages,
   reload,
   isReadonly,
-}: {
-  chatId: string;
-  message: UIMessage;
-  vote: Vote | undefined;
-  isLoading: boolean;
-  setMessages: UseChatHelpers['setMessages'];
-  reload: UseChatHelpers['reload'];
-  isReadonly: boolean;
-}) => {
+}: PurePreviewMessageProps) => {
+  // State to control if the user message text is being viewed or edited.
   const [mode, setMode] = useState<'view' | 'edit'>('view');
 
   // Log the received message parts for debugging
@@ -234,6 +277,12 @@ const PurePreviewMessage = ({
   );
 };
 
+/**
+ * @component PreviewMessage
+ * @description Memoized version of `PurePreviewMessage`. Optimizes rendering by preventing
+ * updates if the core message data (ID, parts, vote) or loading state hasn't changed.
+ * Uses `fast-deep-equal` for efficiently comparing the potentially complex `message.parts` array and `vote` objects.
+ */
 export const PreviewMessage = memo(
   PurePreviewMessage,
   (prevProps, nextProps) => {

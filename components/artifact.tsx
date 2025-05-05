@@ -36,6 +36,11 @@ export const artifactDefinitions = [
 ];
 export type ArtifactKind = (typeof artifactDefinitions)[number]['kind'];
 
+/**
+ * @interface UIArtifact
+ * @description Defines the structure of the artifact state managed by `useArtifact` hook.
+ * This represents the currently active/viewed artifact in the panel.
+ */
 export interface UIArtifact {
   title: string;
   documentId: string;
@@ -51,6 +56,67 @@ export interface UIArtifact {
   };
 }
 
+/**
+ * @interface PureArtifactProps
+ * @description Defines props passed to the `PureArtifact` component, mostly forwarded from `Chat`.
+ */
+interface PureArtifactProps {
+  chatId: string;
+  input: string;
+  setInput: UseChatHelpers['setInput'];
+  status: UseChatHelpers['status'];
+  stop: UseChatHelpers['stop'];
+  append: UseChatHelpers['append'];
+  handleSubmit: UseChatHelpers['handleSubmit'];
+  reload: UseChatHelpers['reload'];
+  messages: Array<UIMessage>;
+  setMessages: UseChatHelpers['setMessages'];
+  attachments: Array<Attachment>;
+  setAttachments: Dispatch<SetStateAction<Array<Attachment>>>;
+  votes: Array<Vote> | undefined;
+  isReadonly: boolean;
+}
+
+/**
+ * @component PureArtifact
+ * @description Renders the artifact panel, displaying the content of the currently active artifact
+ * (determined by the `useArtifact` hook). It handles fetching document versions, displaying
+ * different artifact kinds using their respective renderer components, managing edit/diff modes,
+ * handling content saving (debounced), and providing UI elements like the toolbar and version footer.
+ * It's memoized by the exported `Artifact` component.
+ *
+ * **Upstream:** Rendered by the memoized `Artifact` component, which is rendered by `Chat` (`components/chat.tsx`).
+ * Receives most of its props, including `useChat` helpers and `messages`, from `Chat`.
+ *
+ * **State Management:**
+ * - Uses `useArtifact` hook (likely Zustand): Accesses and modifies the global artifact state (`artifact`, `setArtifact`, `metadata`, `setMetadata`). This determines *which* artifact is displayed.
+ * - Uses `useSWR`: Fetches the version history (`Document[]`) for the current `artifact.documentId` from `/api/document`.
+ * - Uses `useState`: Manages local component state for `mode` ('edit'/'diff'), `document` (currently viewed version), `currentVersionIndex`, `isContentDirty`, `isToolbarVisible`.
+ * - Uses `useEffect`: Syncs fetched documents to local state, triggers document refetching when artifact status changes.
+ *
+ * **Downstream:**
+ * - **Renders:**
+ *   - `ArtifactCloseButton`: Allows hiding the panel.
+ *   - `Toolbar`: Displays artifact title and potentially actions.
+ *   - The specific artifact renderer component (e.g., `TextEditor`, `CodeEditor`) based on `artifact.kind`.
+ *   - `ArtifactMessages`: Displays messages related specifically to the current artifact.
+ *   - `VersionFooter`: Shows version history controls and status.
+ *   - `ArtifactActions`: Provides actions related to the artifact (e.g., share, delete).
+ *   - `MultimodalInput` (potentially for follow-up actions within the artifact context).
+ * - **Calls APIs:**
+ *   - GET `/api/document?id={...}` via `useSWR` to fetch document versions.
+ *   - POST `/api/document?id={...}` via `fetch` inside `handleContentChange` to save updated content.
+ * - **Uses Hooks:**
+ *   - `useDebounceCallback`: Delays the saving of content changes.
+ *   - `useWindowSize`: Adapts layout for mobile.
+ *   - `useSidebar`: Checks if the main sidebar is open (potentially for layout adjustments).
+ * - **Other:**
+ *   - Finds the correct `artifactDefinition` based on `artifact.kind` to get the renderer component and initialization logic.
+ *   - Calls `artifactDefinition.initialize` if defined (e.g., for CodeSandbox setup).
+ *
+ * @param {PureArtifactProps} props - Props passed down from `Chat`.
+ * @returns {JSX.Element | null} The rendered artifact panel or null if not visible.
+ */
 function PureArtifact({
   chatId,
   input,
@@ -66,22 +132,7 @@ function PureArtifact({
   reload,
   votes,
   isReadonly,
-}: {
-  chatId: string;
-  input: string;
-  setInput: UseChatHelpers['setInput'];
-  status: UseChatHelpers['status'];
-  stop: UseChatHelpers['stop'];
-  attachments: Array<Attachment>;
-  setAttachments: Dispatch<SetStateAction<Array<Attachment>>>;
-  messages: Array<UIMessage>;
-  setMessages: UseChatHelpers['setMessages'];
-  votes: Array<Vote> | undefined;
-  append: UseChatHelpers['append'];
-  handleSubmit: UseChatHelpers['handleSubmit'];
-  reload: UseChatHelpers['reload'];
-  isReadonly: boolean;
-}) {
+}: PureArtifactProps) {
   const { artifact, setArtifact, metadata, setMetadata } = useArtifact();
 
   const {
